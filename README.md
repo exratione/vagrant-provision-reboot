@@ -1,12 +1,12 @@
-Vagrant Reboot Provisioner
-==========================
+Vagrant Provision Reboot Plugin
+===============================
 
 Provisioning a Vagrant box with software or configuration changes that require a
 reboot can be a challenge.
 
 This repository demonstrates a Vagrant plugin that allows a provisioning block
-instruction to reboot a VM, followed by remapping shared folders once the VM is
-running again.
+in the Vagrantfile to reboot the VM, followed by remapping shared folders once
+the VM is running again.
 
 Since provisioning blocks run in order, that means you can perform provisioning
 actions both before and after reboot:
@@ -23,7 +23,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   #end
 
   # Run a reboot of a *NIX guest.
-  config.vm.provision :unix_reboots
+  config.vm.provision :unix_reboot
 
   # Run a reboot of a Windows guest, assuming that you are set up with the
   # relevant plugins and configurations to manage a Windows guest in
@@ -42,7 +42,7 @@ project folder, and include it in your Vagrantfile as above.
 Trying It Out
 -------------
 
-To try it out, clone this repository, then launch on of the configured VMs:
+Clone this repository and then launch one of the configured VMs:
 
     vagrant up centos-6.4-x86_64
     vagrant up ubuntu-precise-x86_64
