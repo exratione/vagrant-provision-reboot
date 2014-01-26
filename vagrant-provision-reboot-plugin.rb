@@ -1,5 +1,9 @@
 # A quick hack to allow rebooting of a Vagrant VM during provisioning.
 #
+# This is tested with Vagrant 1.4.3. It may work with slightly earlier versions,
+# but definitely won't work with much earlier versions. The code is fragile with
+# respect to internal changes in Vagrant.
+#
 # Adapted from: https://gist.github.com/ukabu/6780121
 #
 # This file should be placed into the same folder as your Vagrantfile. Then in
@@ -29,34 +33,50 @@
 #
 # ----------------------------------------------------------------------------
 #
-# The provisioner takes care of remounting the shared folders.
+# The provisioner takes care of remounting the synced folders.
 #
-# This will work for the VirtualBox provider, for other providers, a
-# 'remap_shared_folders' action must be added to the provider implementation.
+# This will work for the VirtualBox provider. For other providers, a
+# 'remount_synched_folders' action must be added to the provider implementation.
 
 require 'vagrant'
 
-# Monkey-patch VirtualBox provider to be able to remap shared folders after
+# Monkey-patch the VirtualBox provider to be able to remap synced folders after
 # reboot.
+#
+# This involves pulling out some code fragments from the existing SyncedFolders
+# class - which is unpleasant, but there are no usefully exposed methods such
+# that we can run only what we need to.
 module VagrantPlugins
   module ProviderVirtualBox
     module Action
 
-      class MountSharedFolders < ShareFolders
-        def initialize(app,env)
+      class RemountSyncedFolders < SyncedFolders
+
+        def initialize(app, env)
           super(app, env)
         end
 
         def call(env)
           @env = env
           @app.call(env)
-          mount_shared_folders
+
+          # Copied out of /lib/vagrant/action/builtin/synced_folders.rb in
+          # Vagrant 1.4.3. This is going to be fragile with respect to future
+          # changes, but that's just the way the cookie crumbles.
+          #
+          # We can't just run the whole SyncedFolders.call() method because
+          # it undertakes a lot more setup and will error out if invoked twice
+          # during "vagrant up" or "vagrant provision".
+          folders = synced_folders(env[:machine])
+          folders.each do |impl_name, fs|
+            plugins[impl_name.to_sym][0].new.enable(env[:machine], fs, impl_opts(impl_name, env))
+          end
         end
       end
 
-      def self.action_remap_shared_folders
+      def self.action_remount_synced_folders
         Vagrant::Action::Builder.new.tap do |b|
-          b.use MountSharedFolders
+          b.use RemountSyncedFolders
         end
       end
 
@@ -98,7 +118,8 @@ class RebootPlugin < Vagrant.plugin('2')
         end until @machine.communicate.ready?
 
         # Now the machine is up again, perform the necessary tasks.
-        @machine.action('remap_shared_folders')
+        @machine.ui.info("Launching remount_synced_folders action...")
+        @machine.action('remount_synced_folders')
       end
 
       # Nothing needs to be done on cleanup.
@@ -140,7 +161,8 @@ class RebootPlugin < Vagrant.plugin('2')
         end until @machine.communicate.ready?
 
         # Now the machine is up again, perform the necessary tasks.
-        @machine.action('remap_shared_folders')
+        @machine.ui.info("Launching remount_synced_folders action...")
+        @machine.action('remount_synced_folders')
       end
 
       # Nothing needs to be done on cleanup.
