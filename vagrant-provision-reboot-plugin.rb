@@ -1,10 +1,11 @@
 # A quick hack to allow rebooting of a Vagrant VM during provisioning.
 #
-# This is tested with Vagrant 1.4.3. It may work with slightly earlier versions,
-# but definitely won't work with much earlier versions. The code is fragile with
-# respect to internal changes in Vagrant.
+# This is tested with Vagrant 1.4.3 and 1.6.1. It may work with slightly earlier
+# versions, but definitely won't work with 1.3.* or earlier. The code is fragile
+# with respect to internal changes in Vagrant, as there is no useful public API
+# that allows a reboot to be engineered.
 #
-# Adapted from: https://gist.github.com/ukabu/6780121
+# Originally adapted from: https://gist.github.com/ukabu/6780121
 #
 # This file should be placed into the same folder as your Vagrantfile. Then in
 # your Vagrantfile, you'll want to do something like the following:
@@ -41,7 +42,7 @@
 require 'vagrant'
 
 # Monkey-patch the VirtualBox provider to be able to remap synced folders after
-# reboot.
+# reboot. This is the tricky part.
 #
 # This involves pulling out some code fragments from the existing SyncedFolders
 # class - which is unpleasant, but there are no usefully exposed methods such
@@ -61,8 +62,10 @@ module VagrantPlugins
           @app.call(env)
 
           # Copied out of /lib/vagrant/action/builtin/synced_folders.rb in
-          # Vagrant 1.4.3. This is going to be fragile with respect to future
-          # changes, but that's just the way the cookie crumbles.
+          # Vagrant 1.4.3, and surprisingly still working in 1.6.1.
+          #
+          # This is going to be fragile with respect to future changes, but
+          # that's just the way the cookie crumbles.
           #
           # We can't just run the whole SyncedFolders.call() method because
           # it undertakes a lot more setup and will error out if invoked twice
