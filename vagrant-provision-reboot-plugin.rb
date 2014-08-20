@@ -153,7 +153,7 @@ class RebootPlugin < Vagrant.plugin('2')
       def provision
         command = 'shutdown -t 0 -r -f'
         @machine.ui.info("Issuing command: #{command}")
-        @machine.communicate.execute(command) do
+        @machine.communicate.execute(command) do |type, data|
           if type == :stderr
             @machine.ui.error(data);
           end
