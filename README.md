@@ -20,6 +20,13 @@ Since this involves tinkering with non-public APIs you should not expect it to
 be terribly stable over time, however. It certainly doesn't work in Vagrant
 1.3.* or earlier versions for example.
 
+A More Robust Alternative
+-------------------------
+
+You should find that the [vagrant-reload plugin][1] is a more robust alternative
+to this approach. It makes use of the defined reload behavior, which should be
+much more resilient to future changes.
+
 Usage
 -----
 
@@ -75,3 +82,5 @@ If you want to experiment with Windows VMs, then you are on your own. It may
 work, indeed it should work - but it hasn't been tested. Regardless, you will
 certainly need to install the additions to core Vagrant required to work with
 Windows guest VMs.
+
+[1]: https://github.com/aidanns/vagrant-reload
